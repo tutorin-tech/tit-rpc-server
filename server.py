@@ -77,6 +77,10 @@ class TITRPCServer(RPCServer):
         """TODO: implement. """
 
     @remote
+    async def list_steps(self, request):
+        return self._steps
+
+    @remote
     async def next(self, request):
         self._pointer += 1
 
