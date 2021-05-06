@@ -124,7 +124,7 @@ class TITRPCServer(RPCServer):
     async def read_tutor_fd(self, request):
         self._tutor_pid, self._tutor_fd = self._fork_pty()
 
-        def turor_fd_handler(*_args, **_kwargs):
+        def tutor_fd_handler(*_args, **_kwargs):
             try:
                 data = os.read(self._student_fd, BUF_SIZE)
             except OSError:
