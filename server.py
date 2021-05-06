@@ -126,13 +126,13 @@ class TITRPCServer(RPCServer):
 
         def tutor_fd_handler(*_args, **_kwargs):
             try:
-                data = os.read(self._student_fd, BUF_SIZE)
+                data = os.read(self._tutor_fd, BUF_SIZE)
             except OSError:
                 return
 
             request.ret_and_continue(data.decode('utf8'))
 
-        self.io_loop.add_handler(self._student_fd, tutor_fd_handler, self.io_loop.READ)
+        self.io_loop.add_handler(self._tutor_fd, tutor_fd_handler, self.io_loop.READ)
 
 
 def main():
