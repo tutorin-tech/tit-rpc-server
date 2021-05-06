@@ -73,6 +73,14 @@ class TITRPCServer(RPCServer):
         else:  # parent
             return pid, fd
 
+    def _form_response(self, **kwargs):
+        response = {
+            'n': self._pointer + 1,
+            'outof': self._len,
+        }
+
+        return {**response, **kwargs}
+
     def destroy(self):
         """TODO: implement. """
 
@@ -82,12 +90,7 @@ class TITRPCServer(RPCServer):
             self._pointer -= 1
 
         step = self._steps[self._pointer]
-
-        return {
-            'n': self._pointer + 1,
-            'outof': self._len,
-            'step': step,
-        }
+        return self._form_response(step=step)
 
     @remote
     async def list_steps(self, request):
@@ -103,11 +106,7 @@ class TITRPCServer(RPCServer):
             self._pointer -= 1
             raise StepIsOutOfRange
 
-        return {
-            'n': self._pointer + 1,
-            'outof': self._len,
-            'step': step,
-        }
+        return self._form_response(step=step)
 
     @remote
     async def seek(self, request, step_n):
@@ -117,11 +116,7 @@ class TITRPCServer(RPCServer):
         except IndexError:
             raise StepIsOutOfRange
 
-        return {
-            'n': self._pointer + 1,
-            'outof': self._len,
-            'step': step,
-        }
+        return self._form_response(step=step)
 
     @remote
     async def read_student_fd(self, request):
