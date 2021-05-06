@@ -52,15 +52,15 @@ class TITRPCServer(RPCServer):
         self._steps = [
             {
                 'name': "'cat' command",
-                'desc': '',
+                'desc': "This section describes how to use the 'cat' command.",
             },
             {
                 'name': "'ls' command",
-                'desc': '',
+                'desc': "This section describes how to use the 'ls' command.",
             },
             {
                 'name': "'ps' command",
-                'desc': '',
+                'desc': "This section describes how to use the 'ps' command.",
             },
         ]
         self._len = len(self._steps)
