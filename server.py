@@ -37,7 +37,7 @@ class Application(tornado.web.Application):
         super().__init__(handlers)
 
 
-class StepIsOutOfRange(Exception):
+class StepIsInvalid(Exception):
     pass
 
 
@@ -51,6 +51,10 @@ class TITRPCServer(RPCServer):
         self._pointer = 0
         self._steps = [
             {
+                'name': "intro",
+                'desc': "This is the introduction.",
+            },
+            {
                 'name': "'cat' command",
                 'desc': "This section describes how to use the 'cat' command.",
             },
@@ -63,7 +67,7 @@ class TITRPCServer(RPCServer):
                 'desc': "This section describes how to use the 'ps' command.",
             },
         ]
-        self._len = len(self._steps)
+        self._len = len(self._steps) - 1  # do not count the introduction
 
     def _fork_pty(self):
         pid, fd = pty.fork()
@@ -75,7 +79,7 @@ class TITRPCServer(RPCServer):
 
     def _form_response(self, **kwargs):
         response = {
-            'n': self._pointer + 1,
+            'n': self._pointer,
             'outof': self._len,
         }
 
@@ -86,7 +90,7 @@ class TITRPCServer(RPCServer):
 
     @remote
     async def back(self, request):
-        if self._pointer:
+        if self._pointer > 1:
             self._pointer -= 1
 
         step = self._steps[self._pointer]
@@ -110,11 +114,14 @@ class TITRPCServer(RPCServer):
 
     @remote
     async def seek(self, request, step_n):
+        if step_n < 1:  # do not allow switching to the introduction
+            raise StepIsInvalid
+
         try:
-            step = self._steps[step_n - 1]
-            self._pointer = step_n - 1
+            step = self._steps[step_n]
+            self._pointer = step_n
         except IndexError:
-            raise StepIsOutOfRange
+            raise StepIsInvalid
 
         return self._form_response(step=step)
 
