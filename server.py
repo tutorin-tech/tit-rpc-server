@@ -89,14 +89,6 @@ class TITRPCServer(RPCServer):
         """TODO: implement. """
 
     @remote
-    async def back(self, request):
-        if self._pointer > 1:
-            self._pointer -= 1
-
-        step = self._steps[self._pointer]
-        return self._form_response(step=step)
-
-    @remote
     async def list_steps(self, request):
         return self._steps
 
