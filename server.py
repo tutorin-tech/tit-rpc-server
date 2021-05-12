@@ -112,7 +112,7 @@ class TITRPCServer(RPCServer):
             step = self._steps[self._pointer]
         except IndexError:
             self._pointer -= 1
-            raise StepIsOutOfRange
+            raise StepIsInvalid
 
         return self._form_response(step=step)
 
