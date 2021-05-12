@@ -15,7 +15,6 @@
 
 import os
 import pty
-import signal
 
 import tornado.web
 import tornado.websocket
