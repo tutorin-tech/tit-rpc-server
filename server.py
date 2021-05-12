@@ -25,12 +25,14 @@ from shirow.ioloop import IOLoop
 from shirow.server import RPCServer, TOKEN_PATTERN, remote
 
 from tutorin_tech.rpc.engine import Docker
-from tutorin_tech.rpc.util import allocate_port
+from tutorin_tech.rpc.exceptions import WaitTimeout
+from tutorin_tech.rpc.util import allocate_port, wait_for_it
 
 
 BUF_SIZE = 65536
 
 READY_CODE = 0
+FAILED_CODE = 1
 
 
 class Application(tornado.web.Application):
@@ -136,7 +138,12 @@ class TITRPCServer(RPCServer):
     async def start(self, request):
         env = [f'PORT={self._ssh_port}']
         await self._engine.start(env)
-        await gen.sleep(5)
+
+        try:
+            await wait_for_it(self._ssh_port, 30)
+        except WaitTimeout:
+            return FAILED_CODE
+
         self._pointer = 1
         return READY_CODE
 
