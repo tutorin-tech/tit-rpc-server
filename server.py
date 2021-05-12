@@ -25,6 +25,7 @@ from shirow.ioloop import IOLoop
 from shirow.server import RPCServer, TOKEN_PATTERN, remote
 
 from tutorin_tech.rpc.engine import Docker
+from tutorin_tech.rpc.util import allocate_port
 
 
 BUF_SIZE = 65536
@@ -54,6 +55,8 @@ class TITRPCServer(RPCServer):
         self._student_fd = self._tutor_fd = None
         self._student_pid = self._tutor_pid = None
 
+        self._ssh_port = allocate_port()
+
         self._pointer = 0
         self._steps = [
             {
@@ -82,7 +85,7 @@ class TITRPCServer(RPCServer):
                 'ssh',
                 '-o', 'LogLevel=quiet',
                 '-o', 'StrictHostKeyChecking=no',
-                '-p', '2222',
+                '-p', str(self._ssh_port),
                 f'{username}@127.0.0.1',
             ]
             os.execvp(command_line[0], command_line)
@@ -131,7 +134,8 @@ class TITRPCServer(RPCServer):
 
     @remote
     async def start(self, request):
-        await self._engine.start()
+        env = [f'PORT={self._ssh_port}']
+        await self._engine.start(env)
         await gen.sleep(5)
         self._pointer = 1
         return READY_CODE
