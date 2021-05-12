@@ -23,12 +23,13 @@ class Docker:
         self._container = None
         self._name = f'tit-{uuid.uuid4()}'
 
-    async def start(self):
+    async def start(self, env):
         config = {
             'Image': 'tutorin.tech/student-tutor-alpine',
             'HostConfig': {
                 'NetworkMode': 'host',
             },
+            'Env': env,
         }
         self._container = await self._client.containers.create(config=config, name=self._name)
         await self._container.start()
