@@ -44,7 +44,7 @@ class Application(tornado.web.Application):
         super().__init__(handlers)
 
 
-class StepIsInvalid(Exception):
+class LessonIsInvalid(Exception):
     pass
 
 
@@ -60,7 +60,7 @@ class TITRPCServer(RPCServer):
         self._ssh_port = allocate_port()
 
         self._pointer = 0
-        self._steps = [
+        self._lessons = [
             {
                 'name': "intro",
                 'desc': "This is the introduction.",
@@ -78,7 +78,7 @@ class TITRPCServer(RPCServer):
                 'desc': "This section describes how to use the 'ps' command.",
             },
         ]
-        self._len = len(self._steps) - 1  # do not count the introduction
+        self._len = len(self._lessons) - 1  # do not count the introduction
 
     def _fork_pty(self, username):
         pid, fd = pty.fork()
@@ -106,33 +106,33 @@ class TITRPCServer(RPCServer):
         await self._engine.stop()
 
     @remote
-    async def list_steps(self, request):
-        return self._steps
+    async def list_lessons(self, request):
+        return self._lessons
 
     @remote
     async def next(self, request):
         self._pointer += 1
 
         try:
-            step = self._steps[self._pointer]
+            lesson = self._lessons[self._pointer]
         except IndexError:
             self._pointer -= 1
-            raise StepIsInvalid
+            raise LessonIsInvalid
 
-        return self._form_response(step=step)
+        return self._form_response(lesson=lesson)
 
     @remote
-    async def seek(self, request, step_n):
-        if step_n < 1:  # do not allow switching to the introduction
-            raise StepIsInvalid
+    async def seek(self, request, lesson_n):
+        if lesson_n < 1:  # do not allow switching to the introduction
+            raise LessonIsInvalid
 
         try:
-            step = self._steps[step_n]
-            self._pointer = step_n
+            lesson = self._lessons[lesson_n]
+            self._pointer = lesson_n
         except IndexError:
-            raise StepIsInvalid
+            raise LessonIsInvalid
 
-        return self._form_response(step=step)
+        return self._form_response(lesson=lesson)
 
     @remote
     async def start(self, request):
