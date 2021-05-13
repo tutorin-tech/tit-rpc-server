@@ -24,8 +24,9 @@ from tornado.websocket import WebSocketClosedError
 from shirow.ioloop import IOLoop
 from shirow.server import RPCServer, TOKEN_PATTERN, remote
 
+from tutorin_tech.rpc.api_client import request_course
 from tutorin_tech.rpc.engine import Docker
-from tutorin_tech.rpc.exceptions import WaitTimeout
+from tutorin_tech.rpc.exceptions import CourseDoesNotExist, WaitTimeout
 from tutorin_tech.rpc.util import allocate_port, wait_for_it
 
 
@@ -33,6 +34,7 @@ BUF_SIZE = 65536
 
 READY_CODE = 0
 FAILED_CODE = 1
+COURSE_DOES_NOT_EXIST_CODE = 2
 
 
 class Application(tornado.web.Application):
@@ -59,26 +61,9 @@ class TITRPCServer(RPCServer):
 
         self._ssh_port = allocate_port()
 
+        self._course = None
         self._pointer = 0
-        self._lessons = [
-            {
-                'name': "intro",
-                'desc': "This is the introduction.",
-            },
-            {
-                'name': "'cat' command",
-                'desc': "This section describes how to use the 'cat' command.",
-            },
-            {
-                'name': "'ls' command",
-                'desc': "This section describes how to use the 'ls' command.",
-            },
-            {
-                'name': "'ps' command",
-                'desc': "This section describes how to use the 'ps' command.",
-            },
-        ]
-        self._len = len(self._lessons) - 1  # do not count the introduction
+        self._len = 0
 
     def _fork_pty(self, username):
         pid, fd = pty.fork()
@@ -106,15 +91,23 @@ class TITRPCServer(RPCServer):
         await self._engine.stop()
 
     @remote
-    async def list_lessons(self, request):
-        return self._lessons
+    async def get_course(self, request, course_id):
+        if not self._course:
+            try:
+                self._course = await request_course(course_id)
+            except CourseDoesNotExist:
+                return COURSE_DOES_NOT_EXIST_CODE
+
+            self._len = len(self._course['lessons']) - 1  # do not count the introduction
+
+        return self._course
 
     @remote
     async def next(self, request):
         self._pointer += 1
 
         try:
-            lesson = self._lessons[self._pointer]
+            lesson = self._course['lessons'][self._pointer]
         except IndexError:
             self._pointer -= 1
             raise LessonIsInvalid
@@ -127,7 +120,7 @@ class TITRPCServer(RPCServer):
             raise LessonIsInvalid
 
         try:
-            lesson = self._lessons[lesson_n]
+            lesson = self._course['lessons'][lesson_n]
             self._pointer = lesson_n
         except IndexError:
             raise LessonIsInvalid

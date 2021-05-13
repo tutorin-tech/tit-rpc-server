@@ -11,10 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 
+import os
 
-class CourseDoesNotExist(Exception):
-    """Raised when the requested course does not exist. """
-
-
-class WaitTimeout(Exception):
-    """Raised when waiting on the availability of a TCP port reaches timeout. """
+TIT_API_HOST = os.getenv('TIT_API_HOST', 'http://127.0.0.1:8001')
