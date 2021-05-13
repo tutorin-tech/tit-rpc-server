@@ -181,6 +181,13 @@ class TITRPCServer(RPCServer):
 
         self.io_loop.add_handler(self._tutor_fd, tutor_fd_handler, self.io_loop.READ)
 
+    @remote
+    async def enter(self, request, data):
+        try:
+            os.write(self._student_fd, data.encode('utf8'))
+        except (IOError, OSError):
+            await self.destroy()
+
 
 def main():
     options.parse_command_line()
