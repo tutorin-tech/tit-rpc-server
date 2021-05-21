@@ -65,6 +65,10 @@ class TITRPCServer(RPCServer):
         self._pointer = 0
         self._len = 0
 
+    @property
+    def _current_lesson(self):
+        return self._course['lessons'][self._pointer]
+
     def _fork_pty(self, username):
         pid, fd = pty.fork()
         if pid == 0:  # child
@@ -107,12 +111,10 @@ class TITRPCServer(RPCServer):
         self._pointer += 1
 
         try:
-            lesson = self._course['lessons'][self._pointer]
+            return self._form_response(lesson=self._current_lesson)
         except IndexError:
             self._pointer -= 1
             raise LessonIsInvalid
-
-        return self._form_response(lesson=lesson)
 
     @remote
     async def seek(self, request, lesson_n):
@@ -120,12 +122,10 @@ class TITRPCServer(RPCServer):
             raise LessonIsInvalid
 
         try:
-            lesson = self._course['lessons'][lesson_n]
             self._pointer = lesson_n
+            return self._form_response(lesson=self._current_lesson)
         except IndexError:
             raise LessonIsInvalid
-
-        return self._form_response(lesson=lesson)
 
     @remote
     async def start(self, request):
