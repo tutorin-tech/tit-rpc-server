@@ -16,5 +16,9 @@ class CourseDoesNotExist(Exception):
     """Raised when the requested course does not exist. """
 
 
+class EndOfScriptException(Exception):
+    """Raised when a tutorbot completely executed a lesson script. """
+
+
 class WaitTimeout(Exception):
     """Raised when waiting on the availability of a TCP port reaches timeout. """

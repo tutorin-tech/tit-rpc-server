@@ -22,11 +22,12 @@ from tornado import gen
 from tornado.options import options
 from tornado.websocket import WebSocketClosedError
 from shirow.ioloop import IOLoop
-from shirow.server import RPCServer, TOKEN_PATTERN, remote
+from shirow.server import RPCServer, TOKEN_PATTERN, remote, Ret
 
 from tutorin_tech.rpc.api_client import request_course
 from tutorin_tech.rpc.engine import Docker
-from tutorin_tech.rpc.exceptions import CourseDoesNotExist, WaitTimeout
+from tutorin_tech.rpc.exceptions import CourseDoesNotExist, EndOfScriptException, WaitTimeout
+from tutorin_tech.rpc.tutorbot import Tutorbot
 from tutorin_tech.rpc.util import allocate_port, wait_for_it
 
 
@@ -35,6 +36,7 @@ BUF_SIZE = 65536
 READY_CODE = 0
 FAILED_CODE = 1
 COURSE_DOES_NOT_EXIST_CODE = 2
+END_OF_SCRIPT_CODE = 3
 
 
 class Application(tornado.web.Application):
@@ -65,6 +67,11 @@ class TITRPCServer(RPCServer):
         self._pointer = 0
         self._len = 0
 
+        self._tutorbot = Tutorbot([
+            'uname -a',
+            'cat /etc/passwd',
+        ])
+
     def _fork_pty(self, username):
         pid, fd = pty.fork()
         if pid == 0:  # child
@@ -86,6 +93,15 @@ class TITRPCServer(RPCServer):
         }
 
         return {**response, **kwargs}
+
+    async def _show_me_how(self, request):
+        try:
+            await self._tutorbot.show_me_how(self._tutor_fd)
+        except EndOfScriptException:
+            try:
+                request.ret(END_OF_SCRIPT_CODE)
+            except Ret:
+                return
 
     async def destroy(self):
         await self._engine.stop()
@@ -180,6 +196,17 @@ class TITRPCServer(RPCServer):
             os.write(self._student_fd, data.encode('utf8'))
         except (IOError, OSError):
             await self.destroy()
+
+    @remote
+    async def show_me_how(self, request):
+        self.io_loop.add_callback(lambda: self._show_me_how(request))
+
+    @remote
+    async def pause(self, request):
+        try:
+            self._tutorbot.pause()
+        except TypeError:
+            return
 
 
 def main():
