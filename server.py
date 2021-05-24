@@ -56,12 +56,14 @@ class TITRPCServer(RPCServer):
     def __init__(self, application, request, **kwargs):
         super().__init__(application, request, **kwargs)
 
-        self._engine = Docker()
+        self._tutor_engine = Docker()
+        self._student_engine = Docker()
 
         self._student_fd = self._tutor_fd = None
         self._student_pid = self._tutor_pid = None
 
-        self._ssh_port = allocate_port()
+        self._tutor_ssh_port = allocate_port()
+        self._student_ssh_port = allocate_port()
 
         self._course = None
         self._pointer = 0
@@ -72,14 +74,14 @@ class TITRPCServer(RPCServer):
             'cat /etc/passwd',
         ])
 
-    def _fork_pty(self, username):
+    def _fork_pty(self, username, ssh_port):
         pid, fd = pty.fork()
         if pid == 0:  # child
             command_line = [
                 'ssh',
                 '-o', 'LogLevel=quiet',
                 '-o', 'StrictHostKeyChecking=no',
-                '-p', str(self._ssh_port),
+                '-p', str(ssh_port),
                 f'{username}@127.0.0.1',
             ]
             os.execvp(command_line[0], command_line)
@@ -104,7 +106,8 @@ class TITRPCServer(RPCServer):
                 return
 
     async def destroy(self):
-        await self._engine.stop()
+        await self._tutor_engine.stop()
+        await self._student_engine.stop()
 
     @remote
     async def get_course(self, request, course_id):
@@ -145,11 +148,12 @@ class TITRPCServer(RPCServer):
 
     @remote
     async def start(self, request):
-        env = [f'PORT={self._ssh_port}']
-        await self._engine.start(env)
+        await self._tutor_engine.start([f'PORT={self._tutor_ssh_port}'])
+        await self._student_engine.start([f'PORT={self._student_ssh_port}'])
 
         try:
-            await wait_for_it(self._ssh_port, 30)
+            await wait_for_it(self._tutor_ssh_port, 30)
+            await wait_for_it(self._student_ssh_port, 30)
         except WaitTimeout:
             return FAILED_CODE
 
@@ -158,7 +162,7 @@ class TITRPCServer(RPCServer):
 
     @remote
     async def read_student_fd(self, request):
-        self._student_pid, self._student_fd = self._fork_pty('student')
+        self._student_pid, self._student_fd = self._fork_pty('student', self._student_ssh_port)
 
         def student_fd_handler(*_args, **_kwargs):
             try:
@@ -175,7 +179,7 @@ class TITRPCServer(RPCServer):
 
     @remote
     async def read_tutor_fd(self, request):
-        self._tutor_pid, self._tutor_fd = self._fork_pty('tutor')
+        self._tutor_pid, self._tutor_fd = self._fork_pty('tutor', self._tutor_ssh_port)
 
         def tutor_fd_handler(*_args, **_kwargs):
             try:
