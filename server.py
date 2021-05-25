@@ -15,6 +15,7 @@
 
 import os
 import pty
+import signal
 
 import tornado.web
 import tornado.websocket
@@ -74,6 +75,25 @@ class TITRPCServer(RPCServer):
             'cat /etc/passwd',
         ])
 
+    def _stop_tutor_ssh(self):
+        try:
+            os.kill(self._tutor_pid, signal.SIGKILL)
+        except (ProcessLookupError, OSError, ) as exc:
+            self.logger.error('An error occurred when attempting to kill %s: %s',
+                              self._tutor_pid, exc)
+
+    async def _restart_tutor_engine(self):
+        self.io_loop.add_callback(self._tutor_engine.stop)
+
+        self.io_loop.remove_handler(self._tutor_fd)
+        self.io_loop.add_callback(self._stop_tutor_ssh)
+
+        self._tutor_ssh_port = allocate_port()
+
+        self._tutor_engine = Docker()
+        await self._tutor_engine.start([f'PORT={self._tutor_ssh_port}'])
+        await wait_for_it(self._tutor_ssh_port, 30)
+
     def _fork_pty(self, username, ssh_port):
         pid, fd = pty.fork()
         if pid == 0:  # child
@@ -127,6 +147,8 @@ class TITRPCServer(RPCServer):
 
         try:
             lesson = self._course['lessons'][self._pointer]
+
+            await self._restart_tutor_engine()
         except IndexError:
             self._pointer -= 1
             raise LessonIsInvalid
@@ -141,6 +163,8 @@ class TITRPCServer(RPCServer):
         try:
             lesson = self._course['lessons'][lesson_n]
             self._pointer = lesson_n
+
+            await self._restart_tutor_engine()
         except IndexError:
             raise LessonIsInvalid
 
