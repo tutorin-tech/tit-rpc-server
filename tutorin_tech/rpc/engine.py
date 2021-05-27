@@ -35,7 +35,11 @@ class Docker:
         await self._container.start()
 
     async def stop(self):
-        await self._container.stop()
-        await self._container.delete(force=True)
+        try:
+            await self._container.stop()
+            await self._container.delete(force=True)
+        except AttributeError:
+            pass  # an attempt to stop a container which isn't running yet
+
         await self._client.close()
 
