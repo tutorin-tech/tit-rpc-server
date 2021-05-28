@@ -142,6 +142,20 @@ class TITRPCServer(RPCServer):
         return self._course
 
     @remote
+    async def back(self, _request):
+        self._pointer -= 1
+
+        try:
+            lesson = self._course['lessons'][self._pointer]
+
+            await self._restart_tutor_engine()
+        except IndexError:
+            self._pointer += 1
+            raise LessonIsInvalid
+
+        return self._form_response(lesson=lesson)
+
+    @remote
     async def next(self, request):
         self._pointer += 1
 
