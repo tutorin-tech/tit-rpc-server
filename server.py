@@ -253,7 +253,7 @@ class TITRPCServer(RPCServer):
 
 def main():
     options.parse_command_line()
-    IOLoop().start(Application(), 8000)
+    IOLoop().start(Application(), options.port)
 
 
 if __name__ == '__main__':
