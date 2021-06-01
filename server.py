@@ -70,10 +70,13 @@ class TITRPCServer(RPCServer):
         self._pointer = 0
         self._len = 0
 
-        self._tutorbot = Tutorbot([
-            'uname -a',
-            'cat /etc/passwd',
-        ])
+        self._tutorbot = None
+
+    def _init_tutorbot(self):
+        script = self._course['lessons'][self._pointer]['script']
+        script = script.split('\r\n')
+
+        self._tutorbot = Tutorbot(script)
 
     def _stop_tutor_ssh(self):
         try:
@@ -149,6 +152,7 @@ class TITRPCServer(RPCServer):
             lesson = self._course['lessons'][self._pointer]
 
             await self._restart_tutor_engine()
+            self._init_tutorbot()
         except IndexError:
             self._pointer += 1
             raise LessonIsInvalid
@@ -163,6 +167,7 @@ class TITRPCServer(RPCServer):
             lesson = self._course['lessons'][self._pointer]
 
             await self._restart_tutor_engine()
+            self._init_tutorbot()
         except IndexError:
             self._pointer -= 1
             raise LessonIsInvalid
@@ -179,6 +184,7 @@ class TITRPCServer(RPCServer):
             self._pointer = lesson_n
 
             await self._restart_tutor_engine()
+            self._init_tutorbot()
         except IndexError:
             raise LessonIsInvalid
 
@@ -196,6 +202,8 @@ class TITRPCServer(RPCServer):
             return FAILED_CODE
 
         self._pointer = 1
+        self._init_tutorbot()
+
         return READY_CODE
 
     @remote
