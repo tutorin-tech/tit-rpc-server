@@ -13,4 +13,4 @@
 
 import os
 
-TIT_API_HOST = os.getenv('TIT_API_HOST', 'http://127.0.0.1:8001')
+TIT_API_HOST = os.getenv('TIT_API_HOST', 'http://127.0.0.1:8003')
