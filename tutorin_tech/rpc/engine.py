@@ -28,6 +28,9 @@ class Docker:
             'Image': 'tutorin.tech/student-tutor-alpine',
             'HostConfig': {
                 'NetworkMode': 'host',
+                'StorageOpt': {
+                    'size': '150M',
+                },
             },
             'Env': env,
         }
