@@ -23,6 +23,9 @@ RUN apt-get update && apt-get install -y \
  \
  && mkdir /run/sshd \
  \
+ && rm /etc/update-motd.d/* \
+ && rm /etc/legal \
+ \
  && rm -rf /var/cache/apk/* \
  && rm     /id_rsa.pub
 
