@@ -25,7 +25,7 @@ class Docker:
 
     async def start(self, env):
         config = {
-            'Image': 'tutorin.tech/student-tutor-alpine',
+            'Image': 'tutorin.tech/student-tutor-ubuntu',
             'HostConfig': {
                 'NetworkMode': 'host',
                 'StorageOpt': {

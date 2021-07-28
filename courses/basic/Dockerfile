@@ -1,8 +1,8 @@
-FROM alpine:3.13
+FROM ubuntu:focal
 
 COPY id_rsa.pub /
 
-RUN apk --update add \
+RUN apt-get update && apt-get install -y \
     bash \
     openssh-server \
  \
@@ -20,6 +20,8 @@ RUN apk --update add \
  && mkdir .ssh \
  && cp /id_rsa.pub .ssh/authorized_keys \
  && chown -R tutor:tutor .ssh \
+ \
+ && mkdir /run/sshd \
  \
  && rm -rf /var/cache/apk/* \
  && rm     /id_rsa.pub
