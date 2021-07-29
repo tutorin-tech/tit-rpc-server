@@ -31,6 +31,12 @@ class Docker:
                 'StorageOpt': {
                     'size': '150M',
                 },
+                # Limits a container to 128M of the memory.
+                'Memory': 134217728,
+                'MemorySwap': 134217728,
+                # Limits a container to 25% of the CPU resources.
+                'CpuPeriod': 100000,
+                'CpuQuota': 25000,
             },
             'Env': env,
         }
